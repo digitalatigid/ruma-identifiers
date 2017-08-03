@@ -6,8 +6,6 @@
 #![deny(missing_docs)]
 #![deny(warnings)]
 
-#[macro_use]
-extern crate lazy_static;
 extern crate rand;
 extern crate regex;
 extern crate serde;
@@ -24,7 +22,6 @@ use std::convert::TryFrom;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 use rand::{Rng, thread_rng};
-use regex::Regex;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Error as SerdeError, Unexpected, Visitor};
 use url::{ParseError, Url};
@@ -40,11 +37,6 @@ const MAX_BYTES: usize = 255;
 const MIN_CHARS: usize = 4;
 /// The number of bytes in a valid sigil.
 const SIGIL_BYTES: usize = 1;
-
-lazy_static! {
-    static ref USER_LOCALPART_PATTERN: Regex =
-        Regex::new(r"\A[a-z0-9._=-]+\z").expect("Failed to create user localpart regex.");
-}
 
 /// An error encountered when trying to parse an invalid ID string.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -580,16 +572,11 @@ impl<'a> TryFrom<&'a str> for UserId {
     /// server name.
     fn try_from(user_id: &'a str) -> Result<UserId, Error> {
         let (localpart, host, port) = parse_id('@', user_id)?;
-        let downcased_localpart = localpart.to_lowercase();
-
-        if !USER_LOCALPART_PATTERN.is_match(&downcased_localpart) {
-            return Err(Error::InvalidCharacters);
-        }
 
         Ok(UserId {
             hostname: host,
             port: port,
-            localpart: downcased_localpart.to_owned(),
+            localpart: localpart.to_owned(),
         })
     }
 }
@@ -1135,7 +1122,7 @@ mod tests {
         );
     }
 
-    #[test]
+    /*#[test]
     fn downcase_user_id() {
         assert_eq!(
             UserId::try_from("@CARL:example.com")
@@ -1143,7 +1130,7 @@ mod tests {
                 .to_string(),
             "@carl:example.com"
         );
-    }
+    }*/
 
     #[test]
     fn generate_random_valid_user_id() {
@@ -1200,13 +1187,13 @@ mod tests {
         );
     }
 
-    #[test]
+    /*#[test]
     fn invalid_characters_in_user_id_localpart() {
         assert_eq!(
             UserId::try_from("@%%%:example.com").err().unwrap(),
             Error::InvalidCharacters
         );
-    }
+    }*/
 
     #[test]
     fn missing_user_id_sigil() {
